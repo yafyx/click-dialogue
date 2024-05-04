@@ -5,14 +5,13 @@ if not A_IsAdmin
     ; If not, try to rerun the script with admin privileges
     Run *RunAs "%A_ScriptFullPath%"
 
-#MaxThreadsPerHotkey, 2
 SetDefaultMouseSpeed, 0
 SetBatchLines, -1
 
 ; Define constants for mouse click coordinates and sleep duration
 mouseClickX := 1350
 mouseClickY := 780
-sleepDuration := 10
+sleepDuration := 50
 
 ; Function to get the current time
 GetCurrentTime() {
@@ -20,26 +19,27 @@ GetCurrentTime() {
 }
 
 XButton1::
-    ; Loop while XButton1 is pressed
-    while GetKeyState("XButton1", "P")
-    {
-        ; Perform a left mouse click at the specified coordinates
-        MouseClick, left, mouseClickX, mouseClickY
-        ; Pause execution for a short duration
-        sleep, sleepDuration
-    }
+    ; Start clicking when XButton1 is pressed
+    SetTimer, ClickLoop, %sleepDuration%
+return
+
+XButton1 Up::
+    ; Stop clicking when XButton1 is released
+    SetTimer, ClickLoop, Off
+return
+
+ClickLoop:
+    ; Perform a left mouse click at the specified coordinates
+    MouseClick, left, mouseClickX, mouseClickY
 return
 
 XButton2::
     ; Toggle the state of isButtonPressed
     isButtonPressed := !isButtonPressed
     startTime := GetCurrentTime()
-    ; Loop while isButtonPressed is true and less than 60 seconds have passed
-    while (isButtonPressed && GetCurrentTime() - startTime <= 60000)
-    {
-        MouseClick, left, mouseClickX, mouseClickY
-        sleep, sleepDuration
-    }
-    ; Reset the state of isButtonPressed
-    isButtonPressed := false
+    ; Start clicking when XButton2 is pressed and less than 60 seconds have passed
+    if (isButtonPressed && GetCurrentTime() - startTime <= 60000)
+        SetTimer, ClickLoop, %sleepDuration%
+    else
+        SetTimer, ClickLoop, Off
 return

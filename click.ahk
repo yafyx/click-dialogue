@@ -1,45 +1,60 @@
 ﻿#SingleInstance Force
+#NoEnv
+SetWorkingDir %A_ScriptDir%
+SendMode Input
 
 ; Check if the script is running with admin privileges
 if not A_IsAdmin
-    ; If not, try to rerun the script with admin privileges
+{
     Run *RunAs "%A_ScriptFullPath%"
-
-SetDefaultMouseSpeed, 0
-SetBatchLines, -1
-
-; Define constants for mouse click coordinates and sleep duration
-mouseClickX := 1350
-mouseClickY := 780
-sleepDuration := 50
-
-; Function to get the current time
-GetCurrentTime() {
-    return A_TickCount
+    ExitApp
 }
 
+global mouseClickX := 1350
+global mouseClickY := 780
+global clickInterval := 50
+
+global isClicking := false
+global toggleStartTime := 0
+global toggleDuration := 60000 ; 60 seconds
+
+SetMouseDelay, -1
+SetKeyDelay, -1
+
 XButton1::
-    ; Start clicking when XButton1 is pressed
-    SetTimer, ClickLoop, %sleepDuration%
+    isClicking := true
+    SetTimer, PerformClick, %clickInterval%
 return
 
 XButton1 Up::
-    ; Stop clicking when XButton1 is released
-    SetTimer, ClickLoop, Off
-return
-
-ClickLoop:
-    ; Perform a left mouse click at the specified coordinates
-    MouseClick, left, mouseClickX, mouseClickY
+    isClicking := false
+    SetTimer, PerformClick, Off
 return
 
 XButton2::
-    ; Toggle the state of isButtonPressed
-    isButtonPressed := !isButtonPressed
-    startTime := GetCurrentTime()
-    ; Start clicking when XButton2 is pressed and less than 60 seconds have passed
-    if (isButtonPressed && GetCurrentTime() - startTime <= 60000)
-        SetTimer, ClickLoop, %sleepDuration%
+    isClicking := !isClicking
+    if (isClicking)
+    {
+        toggleStartTime := A_TickCount
+        SetTimer, PerformClick, %clickInterval%
+        SetTimer, CheckToggleDuration, 1000 ; Check every second
+    }
     else
-        SetTimer, ClickLoop, Off
+    {
+        SetTimer, PerformClick, Off
+        SetTimer, CheckToggleDuration, Off
+    }
+return
+
+PerformClick:
+    Click, %mouseClickX%, %mouseClickY%
+return
+
+CheckToggleDuration:
+    if (A_TickCount - toggleStartTime > toggleDuration)
+    {
+        isClicking := false
+        SetTimer, PerformClick, Off
+        SetTimer, CheckToggleDuration, Off
+    }
 return
